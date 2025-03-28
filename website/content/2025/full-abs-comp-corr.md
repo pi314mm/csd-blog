@@ -21,9 +21,7 @@ author = {name = "Matias Scharager", url = "https://pi314mm.com/" }
 # The committee specification is simply a list of strings.
 # However, you can also make an object with fields like in the author.
 committee = [
-    "Robert Harper",
-    "Jan Hoffmann",
-    "Long Pham",
+    
 ]
 +++
 
@@ -130,34 +128,34 @@ If the source and target languages were the same and the statics of programs don
 $$d \equiv e \equiv e' \equiv d'$$
 
 However, in most cases, the source and target programs are not directly contextually-equivalent, but are contextually equivalent over a chosen interface.
-This interface is defined through mutually inverse functions \\(\mathbb{over}\\) and \\(\mathbb{back}\\) that relate the logic of the source and target languages.
-We must thus prove that \\(e \equiv \mathbb{back}(d)\\) or equivalently that \\(\mathbb{over}(e) \equiv d\\) to get full abstraction correctness through compatibility of contextual-equivalence.
+This interface is defined through mutually inverse functions \\(\mathbf{over}\\) and \\(\mathbf{back}\\) that relate the logic of the source and target languages.
+We must thus prove that \\(e \equiv \mathbf{back}(d)\\) or equivalently that \\(\mathbf{over}(e) \equiv d\\) to get full abstraction correctness through compatibility of contextual-equivalence.
 
-$$d \equiv \mathbb{over}(e) \equiv \mathbb{over}(e') \equiv d'$$
+$$d \equiv \mathbf{over}(e) \equiv \mathbf{over}(e') \equiv d'$$
 
-You might be wondering, is \\(\mathbb{over}\\) the same as the compilation itself?
+You might be wondering, is \\(\mathbf{over}\\) the same as the compilation itself?
 If it were, then this result is rather obvious because we would be comparing the compilation to the compilation.
 To illustrate the difference, let's look at an example program and a silly compilation phase that computes every function argument twice.
 Assume that \\(\overline{e1}\\) and \\(\overline{e2}\\) are the fully compiled versions of \\(e1\\) and \\(e2\\) respectively.
 
-$$(\lambda (x : A) : \mathbb{unit} . e1) e2 \squigglerightarrow (\lambda^2 (x : A) (x : A) : \mathbb{unit} . \overline{e1}) \overline{e2} \overline{e2}$$
+$$(\lambda (x : A) : \mathbf{unit} .\ e1)\ e2\ \rightsquigarrow\ (\lambda^2 (x : A) (x : A) : \mathbf{unit}\ .\ \overline{e1})\ \overline{e2}\ \overline{e2}$$
 
-$$\\(\mathbb{over}\\) = \\(\mathbb{back}\\) = (\lambda (x : \mathbb{unit}) : \mathbb{unit} . x)$$
+$$\mathbf{over} = \mathbf{back} = (\lambda (x : \mathbf{unit}) : \mathbf{unit} .\ x)$$
 
-Here we see that the program is rather complex in its implementation and compilation, but it overall has the base type \\(\mathbb{unit}\\).
-The compiler is able to observe how the program is defined and can chop up the syntax however it likes to produce a compiled result, but the \\(\mathbb{over}\\) and \\(\mathbb{back}\\) functions only know that the program has the type \\(\mathbb{unit}\\), and that is a base type that remains consistent before and after compilation, so the \\(\mathbb{over}\\) and \\(\mathbb{back}\\) functions are the identity function.
-In this sense, the compiler functions a conversion of the `intensional` behavior of the program where the way the program is implemented does matter, wheras the \\(\mathbb{over}\\) function is a relation of the `extensional` behavior of the program or in other words an interface wrapping up the program that abstracts away the particular implementation, leaving you only able to condition on the final result value you get from executing the program.
-By comparing the compiler to the \\(\mathbb{over}\\) function, we are stating that the `intensional` changes the compiler makes adheres to the `extensional` properties of the original program, which is a really strong statement that grants us full abstraction correctness of compilation.
+Here we see that the program is rather complex in its implementation and compilation, but it overall has the base type \\(\mathbf{unit}\\).
+The compiler is able to observe how the program is defined and can chop up the syntax however it likes to produce a compiled result, but the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions only know that the program has the type \\(\mathbf{unit}\\), and that is a base type that remains consistent before and after compilation, so the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions are the identity function.
+In this sense, the compiler functions a conversion of the *intensional* behavior of the program where the way the program is implemented does matter, wheras the \\(\mathbf{over}\\) function is a relation of the *extensional* behavior of the program or in other words an interface wrapping up the program that abstracts away the particular implementation, leaving you only able to condition on the final result value you get from executing the program.
+By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating that the *intensional* changes the compiler makes adheres to the *extensional* properties of the original program, which is a really strong statement that grants us full abstraction correctness of compilation.
 
-Now what remains is defining \\(\mathbb{over}\\) and \\(\mathbb{back}\\) for a given compilation phase.
+Now what remains is defining \\(\mathbf{over}\\) and \\(\mathbf{back}\\) for a given compilation phase.
 In our research, we take the approach of taking all the syntax and semantics of the source language and combining them with the syntax and semantics of the target language, creating one large joint language that can comprehend both.
-We can then define \\(\mathbb{over}\\) and \\(\mathbb{back}\\) as functions within the joint language itself, and use contextual-equivalence within the joint language to show that \\(\mathbb{over}\\) and \\(\mathbb{back}\\) are mutual inverses.
+We can then define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as functions within the joint language itself, and use contextual-equivalence within the joint language to show that \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are mutual inverses.
 
 This proof approach works really well when the source and target languages have similar semantics, and in practice, especially for higher-order compilation, it is often the case that the target language is a simplified subset of the source language, meaning we can just utilize the source language itself as the joint language.
-This way, we separate out the proof of the type-safety of the joint language from the overall compilation correctness proof, and in fact, we find we can reuse the same joint language for multiple layered phases of compilation, each with their own definition of \\(\mathbb{over}\\) and \\(\mathbb{back}\\).
+This way, we separate out the proof of the type-safety of the joint language from the overall compilation correctness proof, and in fact, we find we can reuse the same joint language for multiple layered phases of compilation, each with their own definition of \\(\mathbf{over}\\) and \\(\mathbf{back}\\).
 
 To reiterate, the inductive cases of compilation correctness that do not take part in the compilation proceedure itself, such as pairs when the compilation only involves functions, are rather easy to solve with this approach.
-The \\(\mathbb{over}\\) and \\(\mathbb{back}\\) are defined similarly to an eta-expansion at those types, in other words, they just carry the induction hypothesis along smoothly without doing anything complicated.
+The \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are defined similarly to an eta-expansion at those types, in other words, they just carry the induction hypothesis along smoothly without doing anything complicated.
 
 # Proof of Concept
 
@@ -189,7 +187,8 @@ Function application through compilation becomes a parametric packing operation 
 
 ## Joining it All Together
 
-Our final theorem for full abstraction correctness states that if we have \\(e_1 \rightsquigarrow_{CPS} (k, d_1) \rightsquigarrow_{CC} (k, t_1)\\) and similarly \\(e_2 \rightsquigarrow_{CPS} (k, d_2) \rightsquigarrow_{CC} (k, t_2)\\), and we know that \\(\Gamma \vdash e_1 \equiv e_2 : \tau\\), then \\(\overline{\Gamma}, k : \overline{\tau}\to0\vdash t_1\equiv t_2 : 0\\).
+Our final theorem for full abstraction correctness states that if we have \\(e_1 \rightsquigarrow_{CPS} (k, d_1) \rightsquigarrow_{CC} (k, t_1)\\) and similarly \\(e_2 \rightsquigarrow_{CPS} (k, d_2) \rightsquigarrow_{CC} (k, t_2)\\), and we know that
+$$\Gamma \vdash e_1 \equiv e_2 : \tau\ \ \text{implies}\ \ \overline{\Gamma}, k : \overline{\tau}\to0\vdash t_1\equiv t_2 : 0.$$
 This essentially says that the equivalent \\(e_1\\) and \\(e_2\\) programs compile into equivalent programs, even with both phases of compilation put together.
 We successfully demonstrate that this correctness approach works for these two phases of compilation by rigorously proving this theorem.
 
