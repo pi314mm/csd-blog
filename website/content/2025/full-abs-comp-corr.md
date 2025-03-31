@@ -2,7 +2,7 @@
 # The title of your blogpost. No sub-titles are allowed, nor are line-breaks.
 title = "Full Abstraction Correctness of Compilation"
 # Date must be written in YYYY-MM-DD format. This should be updated right before the final PR is made.
-date = 2025-03-28
+date = 2025-03-31
 
 [taxonomies]
 # Keep any areas that apply, removing ones that don't. Do not add new areas!
@@ -38,7 +38,7 @@ With this blog post, we will understand the complexity of verifying compilation 
 The source and target languages that take part in compilation are different languages that could have completely different memory models or operational behavior.
 We (usually) can't prove that the source program and compiled program have the "same" behavior, we must instead prove that they have "related" behavior by some definition of "related" that we must clearly define.
 
-We can use the metaphor of translating between two different spoken languages, say English and Spanish, as many of the same problems occur in computer program compilation.
+We can use the analogy of translating between two different spoken languages, say English and Spanish, as many of the same problems occur in computer program compilation.
 An English sentence is trying to carry along with it a certain logical meaning.
 A translator would need to understand both English and Spanish to understand and translate the meaning.
 Sometimes, the same exact meaning can be conveyed; there's even a lot of words in Spanish directly acquired from English.
@@ -67,7 +67,7 @@ On the other hand, if the source and target languages are substantially differen
 
 - A pun in English could translate directly to Spanish, so the direct translation would make practical sense, but the humor of the pun would be lost in translation
 
-The metaphor helps us realize there can be several different interpretations of "compilation correctness" where some guarantees can be stronger than others.
+The analogy helps us realize there can be several different interpretations of "compilation correctness" where some guarantees can be stronger than others.
 It is fair to say that the direct translation from English to Spanish is a correct translation as the informational content is going to be the same, but one could also argue that it is not correct because it doesn't include important contextual information about it being a pun.
 
 This is related to the difference between operational correctness and full abstraction correctness of compilation.
@@ -81,8 +81,8 @@ A stronger translation would be to use a Spanish pun as well so that the reader 
 With the scale of modern day programming practices, we often need full abstraction correctness instead of just operational correctness so that our compiler can be compositionally correct.
 Without it, bugs could be introduced post-compilation when we try to import a pre-compiled library in the wrong context, or if we try to link together programs from various different sources and compilers that can disagree on their chosen context.
 
-Thankfully, we find that a lot of the time our compilers are already satisfying full abstraction correctness.
-The two compiler phases we verified (continuation passing style translation and closure conversion) are very standard compilation phases that are commonly used in the compilation of higher-order languages and the operational correctness of them is well known, it is just now good to know (with our research and related approaches) that these compiler phases also adhere to full abstraction correctness.
+Our research demonstrates a new proof technique that can be used to verify full abstraction correctness via type-directed joint language merging.
+We have shown the efficacy of this approach via proving full abstraction correctness for two well known phases of compilation: continuation passing style translation and closure conversion.
 
 # Defining Full Abstraction Correctness
 
@@ -97,14 +97,14 @@ Noteably, the empty context (just a blank space and nothing more), is a valid pr
 Kleene-equivalence of programs is the context-sensitive definition of program equivalence where we assume the programming context is empty, and for our purposes, it is defined as mutual termination.
 Kleene-equivalence is enough to show dynamic correctness of compilation because it guarantees the context-sensitive case of whole-program correctness.
 
-Contextual-equivalence is the context-insensitive definition of programming equivalence defined as Kleene-equivalence (mutual termination) within *any* arbitrarily chosen program context.
+Contextual-equivalence is the context-insensitive definition of programming equivalence defined as mutual termination within *any* arbitrarily chosen program context.
 It is clear that this implies Kleene-equivalence as the empty context is one such context.
 
 You can understand this distinction by thinking of the chosen program context as a set of test cases.
 We can opt for the context-sensitive version of correctness where we only test one particular set of test cases, or we could do the context-insensitive approach of quantifing over all possible test cases we can possibly write, even ones we didn't think of, and still show they are equivalent under these arbitrary test cases.
 This might seem too good to be true, however, we can define this helpful tool known as a logical relation to help aid us in these proofs of contextual-equivalence.
 
-A logical relation (for contextual equivalence) is defined inductively on the type-structure of the programs it is comparing, so we can leverage type information about the program to prove logical-equivalence.
+A logical relation is defined inductively on the type-structure of the programs it is comparing, so we can leverage type information about the program to prove logical-equivalence.
 We must also demonstrate that this logical-equivalence corresponds to contextual-equivalence in that they relate the same things, but rest assured that for our research, we have formally verified this complex result in a proof assistant.
 
 ## Full Abstraction Correctness
@@ -144,12 +144,13 @@ $$\mathbf{over} = \mathbf{back} = (\lambda (x : \mathbf{unit}) : \mathbf{unit} .
 
 Here we see that the program is rather complex in its implementation and compilation, but it overall has the base type \\(\mathbf{unit}\\).
 The compiler is able to observe how the program is defined and can chop up the syntax however it likes to produce a compiled result, but the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions only know that the program has the type \\(\mathbf{unit}\\), and that is a base type that remains consistent before and after compilation, so the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions are the identity function.
-In this sense, the compiler functions a conversion of the *intensional* behavior of the program where the way the program is implemented does matter, wheras the \\(\mathbf{over}\\) function is a relation of the *extensional* behavior of the program or in other words an interface wrapping up the program that abstracts away the particular implementation, leaving you only able to condition on the final result value you get from executing the program.
+In this sense, the compiler is a conversion of the *intensional* behavior of the program where the way the program is implemented does matter, wheras the \\(\mathbf{over}\\) function is a relation of the *extensional* behavior of the program.
+The \\(\mathbf{over}\\) function is an interface wrapping up the program in a way that abstracts away the particular implementation, leaving you only able to condition on the final result value you get from executing the program.
 By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating that the *intensional* changes the compiler makes adheres to the *extensional* properties of the original program, which is a really strong statement that grants us full abstraction correctness of compilation.
 
 Now what remains is defining \\(\mathbf{over}\\) and \\(\mathbf{back}\\) for a given compilation phase.
 In our research, we take the approach of taking all the syntax and semantics of the source language and combining them with the syntax and semantics of the target language, creating one large joint language that can comprehend both.
-We can then define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as functions within the joint language itself, and use contextual-equivalence within the joint language to show that \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are mutual inverses.
+The novel contribution of our research is that we can then define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as functions within the joint language itself, and use contextual-equivalence within the joint language to show that \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are mutual inverses.
 
 This proof approach works really well when the source and target languages have similar semantics, and in practice, especially for higher-order compilation, it is often the case that the target language is a simplified subset of the source language, meaning we can just utilize the source language itself as the joint language.
 This way, we separate out the proof of the type-safety of the joint language from the overall compilation correctness proof, and in fact, we find we can reuse the same joint language for multiple layered phases of compilation, each with their own definition of \\(\mathbf{over}\\) and \\(\mathbf{back}\\).
@@ -189,7 +190,7 @@ Function application through compilation becomes a parametric packing operation 
 
 Our final theorem for full abstraction correctness states that if we have \\(e_1 \rightsquigarrow_{CPS} (k, d_1) \rightsquigarrow_{CC} (k, t_1)\\) and similarly \\(e_2 \rightsquigarrow_{CPS} (k, d_2) \rightsquigarrow_{CC} (k, t_2)\\), and we know that
 $$\Gamma \vdash e_1 \equiv e_2 : \tau\ \ \text{implies}\ \ \overline{\Gamma}, k : \overline{\tau}\to0\vdash t_1\equiv t_2 : 0.$$
-This essentially says that the equivalent \\(e_1\\) and \\(e_2\\) programs compile into equivalent programs, even with both phases of compilation put together.
+This essentially says that the equivalent \\(e_1\\) and \\(e_2\\) programs compile into equivalent programs \\(t_1\\) and \\(t_2\\), even with both phases of compilation put together.
 We successfully demonstrate that this correctness approach works for these two phases of compilation by rigorously proving this theorem.
 
 With this, we have completed our proof of full abstraction compilation correctness for two compilation passes layered together utilizing a single joint language definition.
