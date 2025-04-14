@@ -1,6 +1,6 @@
 +++
 # The title of your blogpost No sub-titles are allowed, nor are line-breaks.
-title = "Full Abstraction Correctness of Compilation"
+title = "Correctness of Compilation"
 # Date must be written in YYYY-MM-DD format This should be updated right before the final PR is made.
 date = 2025-03-31
 
@@ -39,24 +39,19 @@ The source and target languages involved in compilation are different languages 
 We (usually) cannot prove that the source program and compiled program have the "same" behavior; instead, we must prove they have "related" behavior according to a clearly defined notion of what "related" means.
 
 We can use the analogy of translating between two different spoken languages, say English and Spanish, as many of the same problems occur in computer program compilation.
-An English sentence is trying to carry along with it a certain logical meaning.
-A translator would need to understand both English and Spanish to understand and translate the meaning.
+First, a translator would need to understand both English and Spanish to understand and translate the meaning.
 Sometimes, the same exact meaning can be conveyed; there are even a lot of words in Spanish directly acquired from English.
 However, sometimes the meaning gets morphed in translation, and information could get lost: a pun in English could be translated directly to Spanish, so the direct translation would make practical sense, but the humor of the pun would be lost in translation.
 
 That's a lot of information, so let's unpack it sentence by sentence.
 
-- An English sentence is trying to carry along with it a certain logical meaning
-
-In programming languages, the source language is well-defined with semantics that give it logical meaning, and this meaning isn't necessarily tied to the target language's semantics.
-Sometimes, a compilation proof focuses on showing that the compiler implementation adheres to a specification (such as the C standard), where the source language doesn't need proper semantics but merely exists post-compilation.
-This is a reasonable viewpoint, but we will consider the case where we have well-defined source and target languages, which is more common in higher-order stages of compilation.
-
 - A translator would need to understand both English and Spanish
 
-This is a key point.
-The metalogic used to compare the source and target languages must exist in a framework that can comprehend both languages simultaneously to establish proofs of similarity between them, much like how a translator can think in terms of either language.
-This is where compilation correctness approaches differ: some examples include defining a cross-language relation, defining a simplified common language of program signals, or, in our case, defining a cohesive joint language that binds both languages together.
+Having grown up learning both English and Spanish, I often end up speaking *Spanglish*, a language that can freely blend English and Spanish language and grammar.
+It is not a matter of switching back and forth between these two languages, but maintaining a mental understanding that comprehends both at the same time.
+
+With our research approach, we create our own version of *Spanglish* but for the source and target computer languages.
+Once we have this joint language, the metalogic used to compare the source and target programs is defined through equivalence relations in the joint language, since both source and target programs are expressible in the joint language.
 
 - A lot of words in Spanish directly acquired from English
 
@@ -78,15 +73,15 @@ Think of it this way: if we know beforehand that each sentence contains a pun (a
 However, if we insert this direct translation into another paragraph where readers don't know that every sentence should contain a pun (a changed context), we've created a translation error because we've lost the pun's content.
 A stronger translation would incorporate a Spanish pun that conveys the same concept, allowing readers to understand the intended message regardless of contextual information.
 
-Given the scale of modern programming practices, we often require full abstraction correctness rather than just operational correctness to ensure our compiler is compositionally correct.
+Given the scale of modern programming practices, we often require full abstraction correctness in addition to operational correctness to ensure our compiler is compositionally correct.
 Without this stronger guarantee, bugs could be introduced post-compilation when importing a pre-compiled library in an incompatible context, or when linking together programs from various sources and compilers that may have conflicting contextual assumptions.
 
-Our research demonstrates a new proof technique that can be used to verify full abstraction correctness via type-directed joint language merging.
-We have shown the efficacy of this approach by proving full abstraction correctness for two well-known phases of compilation: continuation passing style translation and closure conversion.
+Our research demonstrates a new proof technique that can be used to verify operational correctness and full abstraction correctness via type-directed joint language merging.
+We have shown the efficacy of this approach by proving the correctness for two well-known phases of compilation: continuation passing style translation and closure conversion.
 
-# Defining Full Abstraction Correctness
+# Defining Correctness
 
-We will explain the desired theorem of full abstraction correctness bottom-up, starting with defining the equivalence of two programs in the same language.
+We will explain the desired theorem of full abstraction correctness and dynamic correctness bottom-up, starting with defining the equivalence of two programs in the same language.
 
 ## Program Equivalence
 
@@ -94,7 +89,8 @@ First, a program context is defined as a whole program with a single hole that s
 Think of this as a partially written program with a fill-in-the-blank where we will copy-paste our implementation.
 
 Notably, the empty context (just a blank space and nothing more), is a valid program context: filling the blank space with the implementation just gives us back the implementation as a whole program.
-Kleene-equivalence of programs is the context-sensitive definition of program equivalence where we assume the programming context is empty, and for our purposes, it is defined as mutual termination.
+Kleene-equivalence of programs is the context-sensitive definition of program equivalence where we assume the programming context is empty.
+For our purposes, it is defined as mutual termination, meaning that the two programs are Kleene-equivalent if they either both loop forever or both reach a related final value.
 Kleene-equivalence is enough to show the dynamic correctness of compilation because it guarantees the context-sensitive case of whole-program correctness.
 
 Contextual equivalence is the context-insensitive definition of programming equivalence, which is defined as mutual termination within *any* arbitrarily chosen program context.
@@ -102,7 +98,7 @@ This implies Kleene-equivalence as the empty context is one such context.
 
 You can understand this distinction by thinking of the chosen program context as a set of test cases.
 We can opt for the context-sensitive version of correctness where we only test one particular set of test cases, or we could make the context-insensitive approach of quantifying over all possible test cases we can possibly write, even ones we didn't think of, and still show they are equivalent under these arbitrary test cases.
-This might seem too good to be true, however, we can define this helpful tool known as a logical relation to help aid us in these proofs of contextual equivalence.
+This might seem too good to be true, however, we can define this helpful tool known as a logical relation for these proofs of contextual equivalence.
 
 A logical relation is defined inductively on the type structure of the programs it is comparing, so we can leverage type information about the program to prove logical equivalence.
 We must also demonstrate that this logical equivalence corresponds to contextual equivalence in that they relate the same things, but rest assured that for our research, we have formally verified this complex result in a proof assistant.
@@ -121,7 +117,7 @@ If we want to change a single line of code in the source language, but we alread
 This notion of correctness also enables optimizations at any stage of compilation: we can do a partial hot-swap of code at any stage of compilation and still maintain the overall correctness proof.
 The structure of this definition also allows for stacking arbitrarily many compilation phases together, you just need to show that contextual equivalence is preserved at each stage.
 
-## Proving Full Abstraction Correctness
+## Proving Full Abstraction Correctness through Dynamic Correctness
 
 If the source and target languages were the same and the statics of programs didn't change during compilation (not a very interesting compiler), then just knowing that the source and target programs are contextually equivalent is enough to prove full abstraction correctness by symmetry and transitivity of contextual-equivalence.
 
@@ -144,9 +140,9 @@ $$\mathbf{over} = \mathbf{back} = (\lambda (x : \mathbf{unit}) : \mathbf{unit} .
 
 Here we see that the program is rather complex in its implementation and compilation, but it overall has the base type \\(\mathbf{unit}\\).
 The compiler can observe how the program is defined and can chop up the syntax however it likes to produce a compiled result, but the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions only know that the program has the type \\(\mathbf{unit}\\), and that is a base type that remains consistent before and after compilation, so the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions are the identity function.
-In this sense, the compiler is a conversion of the *intensional* behavior of the program where the way the program is implemented does matter, whereas the \\(\mathbf{over}\\) function is a relation of the *extensional* behavior of the program.
+In this sense, the compiler is a conversion of the *intensional* properties of the program where the way the program is implemented does matter, whereas the \\(\mathbf{over}\\) function is a relation of the *extensional* behavior of the program.
 The \\(\mathbf{over}\\) function is an interface wrapping up the program in a way that abstracts away the particular implementation, leaving you only able to condition the final result value you get from executing the program.
-By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating that the *intensional* changes the compiler makes adhere to the *extensional* properties of the original program, which is a really strong statement that grants us full abstraction correctness of compilation.
+By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating that the *intensional* changes the compiler makes adhere to the *extensional* properties of the original program, which is a really strong statement of correctness.
 
 Now what remains is defining \\(\mathbf{over}\\) and \\(\mathbf{back}\\) for a given compilation phase.
 In our research, we take the approach of taking all the syntax and semantics of the source language and combining them with the syntax and semantics of the target language, creating one large joint language that can comprehend both.
@@ -171,7 +167,7 @@ The CPS translation can tame all these control flow effects, leaving us in a sim
 
 Our source language contains the explicit control flow operations of \\(\mathbf{letcc}\\) and \\(\mathbf{throw}\\).
 The constructor \\(\mathbf{letcc}\\) allows us to record the current state of the computer and save it as a continuation while \\(\mathbf{throw}\\) lets us jump to some previous state of the computer by calling the respective continuation.
-You can pretend it's similar to an assembly jump operation, so you can imagine how it could be used to express conditional branching and short-circuiting of computations.
+You can pretend it is similar to an assembly jump operation, so you can imagine how it could be used to express conditional branching and short-circuiting of computations.
 
 Interestingly, \\(\mathbf{over}\\) and \\(\mathbf{back}\\) for the CPS translation must use these control flow mechanisms within its definition.
 Thankfully, we can prove that these particular control flow effects within the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are benign so we can maintain the properties we want with some extra effort.
