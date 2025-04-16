@@ -124,7 +124,7 @@ Looking carefully at the definition of full abstraction correctness, we find tha
 We still need to prove dynamic correctness in addition to full abstraction correctness to show the compiler makes sense.
 In the next section, we present a method of proving dynamic correctness that additionally grants us full abstraction correctness directly.
 
-## Proving Full Abstraction Correctness through Dynamic Correctness
+## Proving Correctness
 
 If the source and target languages were the same and the statics of programs didn't change during compilation (not a very interesting compiler), then just knowing that the source and target programs are contextually equivalent is enough to prove full abstraction correctness by symmetry and transitivity of contextual-equivalence.
 
@@ -135,6 +135,10 @@ This interface is defined through mutually inverse functions \\(\mathbf{over}\\)
 We must thus prove that \\(e \equiv \mathbf{back}(d)\\) or equivalently that \\(\mathbf{over}(e) \equiv d\\) to get full abstraction correctness through compatibility of contextual-equivalence.
 
 $$d \equiv \mathbf{over}(e) \equiv \mathbf{over}(e') \equiv d'$$
+
+We define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) at base answer types such as \\(\mathbf{unit}\\) or \\(\mathbf{nat}\\) to be the identity function, thus showing that the source and target programs at those base types result in the same answer.
+With this in mind, dynamic correctness is the special case of \\(e \equiv \mathbf{back}(d) \equiv d\\) for closed source programs \\(e\\) of the base answer type and their respective compiled program \\(d\\).
+Dynamic correctness is proved through inducting over open source programs of arbitrary types with the generalization of this property as the induction hypothesis, and then extracting the special case afterwards.
 
 You might be wondering, is \\(\mathbf{over}\\) the same as the compilation itself?
 If it were, then this result is rather obvious because we would be comparing the compilation to the compilation.
@@ -158,12 +162,16 @@ The novel contribution of our research is that we can then define \\(\mathbf{ove
 This proof approach works really well when the source and target languages have similar semantics, and in practice, especially for higher-order compilation, it is often the case that the target language is a simplified subset of the source language, meaning we can just utilize the source language itself as the joint language.
 This way, we separate the proof of the type-safety of the joint language from the overall compilation correctness proof, and in fact, we find we can reuse the same joint language for multiple layered phases of compilation, each with its definition of \\(\mathbf{over}\\) and \\(\mathbf{back}\\).
 
+A related work that showcases this is Crary's work on Fully Abstract Module Compilation.
+This employs a phase-separation algorithm for splitting modules into static and dynamic portions without reference to the module language.
+This means we can go from a rich expressive language with modules as the source language, compile away the modules through this phase-separation technique, and arrive at a simpler target language without modules.
+
 To reiterate, the inductive cases of compilation correctness that do not take part in the compilation procedure itself, such as pairs when the compilation only involves functions, are rather easy to solve with this approach.
 The \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are defined similarly to an eta-expansion at those types, in other words, they just carry the induction hypothesis along smoothly without doing anything complicated.
 
 # Proof of Concept
 
-To demonstrate that our compilation correctness procedure works, we proved the correctness of two separate compilation phases and then joined these two proofs together to achieve full abstraction correctness.
+To demonstrate that our compilation correctness procedure works, we proved the correctness of two separate compilation phases and then joined these two proofs together.
 
 ## Continuation Passing Style Phase
 
