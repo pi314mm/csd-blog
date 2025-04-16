@@ -107,15 +107,21 @@ We must also demonstrate that this logical equivalence corresponds to contextual
 
 Formally, full abstraction correctness is defined as: if two source programs \\(e\\) and \\(e'\\) are contextually equivalent, and they compile to target programs \\(d\\) and \\(d'\\) respectively, then \\(d\\) and \\(d'\\) are contextually-equivalent.
 
-Why is this what we want?
-Well, if we look at the given that \\(e\\) and \\(e'\\) are contextually equivalent, we can comprehend this as if we were to hot-swap \\(e'\\) for \\(e\\) in our program, there would be no observable difference.
-The logical message that \\(e\\) and \\(e'\\) are trying to convey is the same, even if the two particular ways of explaining that message are different.
-By knowing that \\(d\\) and \\(d'\\) are contextually equivalent after compilation, we learn that the logical message gets preserved post-compilation: the compiler is somewhat agnostic to the particular way the logical message is represented in the source language, it compiles in such a way that preserves the logical message the source programs are trying to convey.
+Contextual equivalence between programs inherently defines a type interface between the programs and an abstraction guarantee that the programs provide the same results under that interface.
+A compiler that is fully abstract preserves these abstractions through compilation, meaning that the same interface that exists between \\(e\\) and \\(e'\\) still exists between \\(d\\) and \\(d'\\) without imposing additional restrictions as to how \\(d\\) and \\(d'\\) should be used to preserve this interace.
 
-When viewed from a practical perspective, this ability to hot-swap before and after compilation is the driving force of modern software practices.
+A reasonable example of breaking this abstraction would be like the source program requires a specific memory location to be "nonzero" and only allows you to reference this memory location through functions that preserve this nonzero property.
+Naively compiling this could accidentally expose that memory location to other parts of the program.
+Abstraction is preserved only if those other parts of the program abide by the rules of making that memory location nonzero.
+Since this restriction is not enforced by the types or the language itself, it opens the opportunity for a wide variety of bugs resulting from not preserving this invariant.
+
+When viewed from a practical perspective, full abstraction correctness gives us an ability to "hot-swap" code at any stage of compilation, since contextual equivalence is preserved through compilation and it is compatible and transitive, and this is the driving force of many modern software practices.
 If we want to change a single line of code in the source language, but we already spent many minutes compiling the old program, we can just recompile the single line on its own and hot-swap the old version of the line post-compilation, and compilation correctness would still be preserved.
 This notion of correctness also enables optimizations at any stage of compilation: we can do a partial hot-swap of code at any stage of compilation and still maintain the overall correctness proof.
 The structure of this definition also allows for stacking arbitrarily many compilation phases together, you just need to show that contextual equivalence is preserved at each stage.
+
+Looking carefully at the definition of full abstraction correctness, we find that a way to trivialize it is to compile every source program into a single target program: this would preserve the abstraction guarantees but it wouldn't be a very useful compiler.
+We still need to prove dynamic correctness in addition to full abstraction correctness to show the compiler makes sense, and in the next section we show a method of proving dynamic correctness that additionally directly grants us full abstraction correctness.
 
 ## Proving Full Abstraction Correctness through Dynamic Correctness
 
