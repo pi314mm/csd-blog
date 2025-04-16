@@ -108,7 +108,7 @@ We must also demonstrate that this logical equivalence corresponds to contextual
 Formally, full abstraction correctness is defined as: if two source programs \\(e\\) and \\(e'\\) are contextually equivalent, and they compile to target programs \\(d\\) and \\(d'\\) respectively, then \\(d\\) and \\(d'\\) are contextually-equivalent.
 
 Contextual equivalence between programs inherently defines a type interface between the programs and an abstraction guarantee that the programs provide the same results under that interface.
-A compiler that is fully abstract preserves these abstractions through compilation, meaning that the same interface that exists between \\(e\\) and \\(e'\\) still exists between \\(d\\) and \\(d'\\) without imposing additional restrictions as to how \\(d\\) and \\(d'\\) should be used to preserve this interace.
+A compiler that is fully abstract preserves these abstractions through compilation, meaning that the same interface that exists between \\(e\\) and \\(e'\\) still exists between \\(d\\) and \\(d'\\) without imposing additional restrictions as to how \\(d\\) and \\(d'\\) should be used to preserve this interface.
 
 A reasonable example of breaking abstraction would be when a source program requires a specific memory location to be "nonzero" and only allows you to reference this memory location through functions that preserve this nonzero property.
 Naively compiling this could accidentally expose that memory location to other parts of the program. Abstraction is preserved only if those other parts of the program abide by the rule of keeping that memory location nonzero.
