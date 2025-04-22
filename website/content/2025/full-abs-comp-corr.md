@@ -25,12 +25,11 @@ committee = [
 ]
 +++
 
-Compiler correctness has always been an important concern: even if we write wonderfully pristine code, it means nothing if bugs are injected during compilation.
-
 Compilation is the process of converting a human-comprehensible, mathematically rich programming language into a machine-readable, operationally explicit target language, often involving multiple sequential phases.
 Compiler correctness ensures that the original program supplied by the user and the target program produced as output "do the same thing" according to our observations.
 
-This blog post will explore the complexity of verifying compiler correctness, delve into its mathematical definition, and detail the specific approach we adopted in our research.
+Compiler correctness has always been an important concern: even if we write wonderfully pristine code, it means nothing if bugs are injected during compilation.
+This blog post will explore the complexity of verifying compiler correctness, delve into its mathematical definition, and showcase the specific approach we adopted in our research as a proof of concept.
 
 # Difficulties in Proving Compiler Correctness
 
@@ -65,7 +64,7 @@ However, if the source and target languages are substantially different, our pro
 This analogy helps us realize that there can be several interpretations of "compiler correctness," with some guarantees being stronger than others.
 While it is reasonable to consider the direct translation from English to Spanish correct because the informational content remains the same, one could also argue that it is incomplete because it fails to convey important contextual information, such as a pun in the original text.
 
-This relates to the difference between operational correctness and full abstraction correctness in compilation.
+This relates to the difference between *operational correctness* and *full abstraction correctness* in compilation.
 Operational correctness states that source and target programs behave equivalently when viewed as a whole-program translation, though this equivalence is context-sensitive.
 Full abstraction correctness extends this by requiring that the translation must also be context-insensitive.
 
@@ -85,33 +84,34 @@ We will explain the desired theorem of full abstraction correctness and operatio
 
 ## Program Equivalence
 
-First, a program context is defined as a whole program with a single hole that should be filled.
+First, a *program context* is defined as a whole program with a single hole that should be filled.
 Think of this as a partially written program with a fill-in-the-blank where we will copy-paste our implementation.
-
 Notably, the empty context (just a blank space and nothing more), is a valid program context: filling the blank space with the implementation just gives us back the implementation as a whole program.
-Kleene-equivalence of programs is the context-sensitive definition of program equivalence where we assume the programming context is empty.
-For our purposes, it is defined as mutual termination, meaning that the two programs are Kleene-equivalent if they either both loop forever or both reach a related final value.
-Kleene-equivalence is enough to show the operational correctness of compilation because it guarantees the context-sensitive case of whole-program correctness.
 
-Contextual equivalence is the context-insensitive definition of programming equivalence, which is defined as mutual termination within *any* arbitrarily chosen program context.
-This implies Kleene-equivalence as the empty context is one such context.
+*Kleene equivalence* of programs is the context-sensitive definition of program equivalence where we assume the programming context is empty.
+For our purposes, it is defined as mutual termination, meaning that the two programs are Kleene equivalent if they either both loop forever or both reach a related final value.
+Kleene equivalence is enough to show the operational correctness of compilation because it guarantees the context-sensitive case of whole-program correctness.
+
+*Contextual equivalence* is the context-insensitive definition of programming equivalence, which is defined as mutual termination within *any* arbitrarily chosen program context.
+This implies Kleene equivalence as the empty context is one such context.
 
 You can understand this distinction by thinking of the chosen program context as a set of test cases.
 We can opt for the context-sensitive version of correctness where we only test one particular set of test cases, or we could make the context-insensitive approach of quantifying over all possible test cases we can possibly write, even ones we didn't think of, and still show they are equivalent under these arbitrary test cases.
-This might seem too good to be true, however, we can define this helpful tool known as a logical relation for these proofs of contextual equivalence.
+The context-insensitive approach might seem too good to be true: no matter how many test cases pass, the worry of an obscure, failing test case persists.
+However, we can define this helpful tool known as a logical relation for these proofs of contextual equivalence.
 
-A logical relation is defined inductively on the type structure of the programs it is comparing, so we can leverage type information about the program to prove logical equivalence.
+A *logical relation* is defined inductively on the type structure of the programs it is comparing, so we can leverage type information about the program to prove *logical equivalence*.
 We must also demonstrate that this logical equivalence corresponds to contextual equivalence in that they relate the same things, but rest assured that for our research, we have formally verified this complex result in a proof assistant.
 
 ## Full Abstraction Correctness
 
-Formally, full abstraction correctness is defined as: if two source programs \\(e\\) and \\(e'\\) are contextually equivalent, and they compile to target programs \\(d\\) and \\(d'\\) respectively, then \\(d\\) and \\(d'\\) are contextually-equivalent.
+Formally, full abstraction correctness is defined as: if two source programs \\(e\\) and \\(e'\\) are contextually equivalent, and they compile to target programs \\(d\\) and \\(d'\\) respectively, then \\(d\\) and \\(d'\\) are contextually equivalent.
 
 Contextual equivalence between programs inherently defines a type interface between the programs and an abstraction guarantee that the programs provide the same results under that interface.
 A compiler that is fully abstract preserves these abstractions through compilation, meaning that the same interface that exists between \\(e\\) and \\(e'\\) still exists between \\(d\\) and \\(d'\\) without imposing additional restrictions as to how \\(d\\) and \\(d'\\) should be used to preserve this interface.
 
-A reasonable example of breaking abstraction would be when a source program requires a specific memory location to be "nonzero" and only allows you to reference this memory location through functions that preserve this nonzero property.
-Naively compiling this could accidentally expose that memory location to other parts of the program. Abstraction is preserved only if those other parts of the program abide by the rule of keeping that memory location nonzero.
+A reasonable example of breaking abstraction would be when a source program requires a specific memory location \\(m\\) to be "nonzero" and only allows you to reference this memory location through functions that preserve \\(m\neq 0\\).
+Naively compiling this could accidentally exposes \\(m\\) to other parts of the program. Abstraction is preserved only if those other parts of the program abide by the rule of \\(m\neq 0\\).
 Since this restriction is not enforced by the types or the language itself, it creates opportunities for a wide variety of bugs resulting from failure to preserve this invariant.
 
 From a practical perspective, full abstraction correctness gives us the ability to "hot-swap" code at any stage of compilation, since contextual equivalence is preserved through compilation and is both compatible and transitive.
