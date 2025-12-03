@@ -150,43 +150,61 @@ If the source and target languages were the same and the types of programs didn'
 $$d \equiv e \equiv e' \equiv d'$$
 
 However, in most cases, the source and target programs are not directly contextually equivalent but are contextually equivalent over a chosen interface.
-This interface is defined through mutually inverse functions \\(\mathbf{over}\\) and \\(\mathbf{back}\\) that relate the logic of the source and target languages.
-We must thus prove that \\(e \equiv \mathbf{back}(d)\\) or equivalently that \\(\mathbf{over}(e) \equiv d\\) to get full abstraction correctness through compatibility of contextual-equivalence.
+This interface is defined through functions \\(\mathbf{over}\\) and \\(\mathbf{back}\\) that relate the logic of the source and target languages.
+The function \\(\mathbf{over}\\) wraps an interface around a source program so it can be understood in the target language, and the \\(\mathbf{back}\\) wraps an interface around the target program so it can be understood in the source language.
+We define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) inductively based on the type of the input, where we set \\(\mathbf{over}\\) and \\(\mathbf{back}\\) at the base answer type of booleans to be the identity function.
+We prove that these two interfaces are inverses of each other, meaning for any program \\(p\\), we have that \\(p\equiv \mathbf{over}(\mathbf{back}(p))\equiv \mathbf{back}(\mathbf{over}(p)) \\).
+
+To get full abstraction correctness, it is enough to prove that for any pair of source and its compiled output \\(s \\) and \\(t\\), we have \\(s \equiv \mathbf{back}(t)\\) or equivalently that \\(\mathbf{over}(s) \equiv t\\).
 
 $$d \equiv \mathbf{over}(e) \equiv \mathbf{over}(e') \equiv d'$$
 
-We define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) at the base answer type of booleans to be the identity function, thus we can simplify the functions away when comparing at the answer type.
-With this in mind, operational correctness is the special case of \\(e \equiv \mathbf{over}(e) \equiv d\\) for whole source programs \\(e\\) and their respective compiled program \\(d\\).
-Operational correctness is proved through inducting over open source programs of arbitrary types with the generalization of this property as the induction hypothesis, and then extracting the special case afterwards.
+It remains to show that \\(\mathbf{over}(s) \equiv t\\) for any source and its compiled output.
+Notably, operational correctness is the special case of this theorem when \\(s\\) is a whole program and falls out as a corrollary.
+In that case, \\(\mathbf{over}\\) is the identity function so we have \\(s \equiv \mathbf{over}(s) \equiv t\\), and contextual equivalence of whole programs implies Kleene equivalence of those same programs under the empty context, so \\(s\\) is Kleene equivalent to \\(t\\).
 
-You might be wondering, is \\(\mathbf{over}\\) the same as the compilation itself?
-If it were, then this result is rather obvious because we would be comparing the compilation to the compilation.
-To illustrate the difference, let's look at an example program and a silly compilation phase that computes every function argument twice.
-Assume that \\(\overline{e1}\\) and \\(\overline{e2}\\) are the fully compiled versions of \\(e1\\) and \\(e2\\) respectively.
+To prove this big theorem of \\(\mathbf{over}(s) \equiv t\\), we carefully induct through each possible case of compilation pairs \\(s\\) and \\(t\\).
+We rely on type information, expanding out the definitions of \\(\mathbf{over}\\) and \\(\mathbf{back}\\), and using the logical relation at these types to prove contextual equivalence.
+This is a lengthy proof, but straightforward once you have the proper definitions of \\(\mathbf{over}\\), \\(\mathbf{back}\\), and the logical relation, all of which were meticulously defined precisely to make this proof work out and grant us the intended contextual equivalence result.
 
-$$(\lambda (x : A) : \mathbf{unit} .\ e1)\ e2\ \rightsquigarrow\ (\lambda^2 (x : A) (x : A) : \mathbf{unit}\ .\ \overline{e1})\ \overline{e2}\ \overline{e2}$$
+## Defining Over and Back
 
-$$\mathbf{over} = \mathbf{back} = (\lambda (x : \mathbf{unit}) : \mathbf{unit} .\ x)$$
+There can be multiple ways of defining \\(\mathbf{over}\\) and \\(\mathbf{back}\\).
+The necessary restrictions we have are that they are inverses of each other, they are contextually equivalent to the identity function at the base type, and the big theorem of \\(\mathbf{over}(s) \equiv t\\) holds true.
 
-Here we see that the program is rather complex in its implementation and compilation, but it overall has the base type \\(\mathbf{unit}\\).
-The compiler can observe how the program is defined and can chop up the syntax however it likes to produce a compiled result, but the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions only know that the program has the type \\(\mathbf{unit}\\), and that is a base type that remains consistent before and after compilation, so the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions are the identity function.
-In this sense, the compiler is a conversion of the *intensional* properties of the program where the way the program is implemented does matter, whereas the \\(\mathbf{over}\\) function is a relation of the *extensional* behavior of the program.
-The \\(\mathbf{over}\\) function is an interface wrapping up the program in a way that abstracts away the particular implementation, leaving you only able to condition the final result value you get from executing the program.
-By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating that the *intensional* changes the compiler makes adhere to the *extensional* properties of the original program, which is a really strong statement of correctness.
+The novel contribution of the type-merging correctness approach is that we can then define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as functions within the joint language itself, and use contextual-equivalence within the joint language to show that \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are mutual inverses.
+Other related approaches embed \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as syntactic constructs of the joint language, but adds complications in the safety proof of the joint language.
 
-Now what remains is defining \\(\mathbf{over}\\) and \\(\mathbf{back}\\) for a given compilation phase.
-In our research, we take the approach of taking all the syntax and semantics of the source language and combining them with the syntax and semantics of the target language, creating one large joint language that can comprehend both.
-The novel contribution of our research is that we can then define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as functions within the joint language itself, and use contextual-equivalence within the joint language to show that \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are mutual inverses.
+We opt for the simplest definitions we can find, or the simplest type coersions \\(\mathbf{over} : \tau \to \overline{\tau}\\) and \\(\mathbf{back} : \overline{\tau}\to\tau\\) defined inductively on the type \\(\tau\\) where the compilation strategy converts source language type \\(\tau\\) to the target language type \\(\overline{\tau}\\), and we prove that these properties hold for the chosen functions.
 
-This proof approach works really well when the source and target languages have similar semantics, and in practice, especially for higher-order compilation, it is often the case that the target language is a simplified subset of the source language, meaning we can just utilize the source language itself as the joint language.
+The coersions are pretty easy to define in the inductive cases where the compilation stategy does not do much other than inductively carry the out the translation.
+For instance, consider the case of compiling pairs by just compiling each side separately without change, so \\(\tau_1 \times \tau_2\\) compiles to \\(\overline {\tau_1} \times \overline{\tau_2}\\).
+The coersions at these types are defined similarly to an eta-expansion, in other words, they just carry the induction hypothesis along smoothly without doing anything complicated.
+
+Type-merging correcteness works really well when the source and target languages have similar semantics, and in practice, especially for higher-order compilation, it is often the case that the target language is a simplified subset of the source language, meaning we can just utilize the source language itself as the joint language.
 This way, we separate the proof of the type-safety of the joint language from the overall compilation correctness proof, and in fact, we find we can reuse the same joint language for multiple layered phases of compilation, each with its definition of \\(\mathbf{over}\\) and \\(\mathbf{back}\\).
 
 A related work that showcases this is Crary's work on Fully Abstract Module Compilation.
 This employs a phase-separation algorithm for splitting modules into static and dynamic portions without reference to the module language.
 This means we can go from a rich expressive language with modules as the source language, compile away the modules through this phase-separation technique, and arrive at a simpler target language without modules.
+In this case, the joint language is rather close to the source language itself.
 
-To reiterate, the inductive cases of compilation correctness that do not take part in the compilation procedure itself, such as pairs when the compilation only involves functions, are rather easy to solve with this approach.
-The \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are defined similarly to an eta-expansion at those types, in other words, they just carry the induction hypothesis along smoothly without doing anything complicated.
+## Intensional vs Extensional Compilation
+
+You might be wondering, is \\(\mathbf{over}\\) the same as the compilation itself?
+If it were, then this result is rather obvious because we would be comparing the compilation to the compilation.
+To illustrate the difference, let's look at an example program and a silly compilation phase that computes every function argument twice.
+Assume that \\(d1\\) and \\(d2\\) are the fully compiled versions of \\(e1\\) and \\(e2\\) respectively.
+
+$$(\lambda (x : A) : \mathbf{bool} .\ e1)\ e2\ \rightsquigarrow\ (\lambda^2 (x : A) (x : A) : \mathbf{bool}\ .\ \overline{e1})\ \overline{e2}\ \overline{e2}$$
+
+$$\mathbf{over} = \mathbf{back} = (\lambda (x : \mathbf{bool}) : \mathbf{bool} .\ x)$$
+
+Here we see that the program is rather complex in its implementation and compilation, but it overall has the base type \\(\mathbf{bool}\\).
+The compiler can observe how the program is defined and can chop up the syntax however it likes to produce a compiled result, but the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions only know that the program has the type \\(\mathbf{bool}\\), and that is a base type that remains consistent before and after compilation, so the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions are the identity function.
+In this sense, the compiler is a conversion of the *intensional* properties of the program where the way the program is implemented does matter, whereas the \\(\mathbf{over}\\) function is a relation of the *extensional* behavior of the program.
+The \\(\mathbf{over}\\) function is an interface wrapping up the program in a way that abstracts away the particular implementation, leaving you only able to condition the final result value you get from executing the program.
+By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating that the *intensional* changes the compiler makes adhere to the *extensional* properties of the original program, which is a really strong statement of correctness.
 
 # Proof of Concept
 
