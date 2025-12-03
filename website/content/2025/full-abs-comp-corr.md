@@ -1,25 +1,13 @@
 +++
-# The title of your blogpost No sub-titles are allowed, nor are line-breaks.
 title = "Correctness of Compilation"
-# Date must be written in YYYY-MM-DD format This should be updated right before the final PR is made.
 date = 2025-03-31
 
 [taxonomies]
-# Keep any areas that apply, removing ones that don't Do not add new areas!
 areas = ["Programming Languages"]
-# Tags can be set to a collection of a few keywords specific to your blogpost.
-# Consider these similar to keywords specified for a research paper.
 tags = ["compilers", "full-abstraction", "correctness", "logical-relations", "compatibility"]
 
 [extra]
-# For the author field, you can decide to not have a url.
-# If so, simply replace the set of author fields with the name string.
-# For example:
-#   author = "Harry Bovik"
-# However, adding a URL is strongly preferred
 author = {name = "Matias Scharager", url = "https://pi314mm.com/" }
-# The committee specification is simply a list of strings.
-# However, you can also make an object with fields like in the author.
 committee = [
     
 ]
@@ -102,7 +90,7 @@ We fix our answer type to be booleans, hence whole programs are decision algorit
 It is broken into three cases: either both programs infinitely loop, both programs terminate and accept, or both programs terminate and reject.
 We know for certain that for every whole program, one of these three cases must occur.
 
-Now how can we boostrap Kleene equivalence to compare equality between arbitrary expressions instead of just whole programs?
+Now how can we bootstrap Kleene equivalence to compare equality between arbitrary expressions instead of just whole programs?
 There are several ways to do this, and the definition we opt for is *contextual equivalence*.
 
 First, a *program context* is defined as a whole program with a single hole that should be filled.
@@ -110,20 +98,20 @@ Think of this as a partially written program with a fill-in-the-blank where we w
 Two expressions are contextually equivalent by definition if when we paste them into *any* arbitrarily chosen program context, the two resulting whole programs are Kleene equivalent.
 
 One can think of program contexts as test cases for verifying the equivalence of two expressions.
-The fact that contextual equivalence quantifies over *any* arbitrarily chosen program context indicates that the expressions are equivalent for *any* possible test case, even really obscure test cases.
+The fact that contextual equivalence quantifies over *any* arbitrarily chosen program context indicates that the expressions are equivalent for *any* possible test cases, even really obscure test cases.
 It is not always enough to test a finite number of test cases to reach contextual equivalence: if a function works for inputs 0 to n, how do we know it still works for n+1?
 This makes contextual equivalence difficult to work with because we need a stronger mathematical understanding of the behavior of the underlying programs to be able to prove it.
 
 Thankfully, we can define this helpful tool known as a logical relation for these proofs of contextual equivalence.
 A *logical relation* is defined inductively on the type structure of the programs it is comparing, so we can leverage type information about the program to prove *logical equivalence*.
-We define a logical relation in such a way gives us the tools to analyze the programs we want to work with but also ensures that logical equivalence and contextual equivalence relate the same things.
+We define a logical relation in such a way that gives us the tools to analyze the programs we want to work with but also ensures that logical equivalence and contextual equivalence relate the same things.
 
 ## Full Abstraction Correctness
 
 Formally, full abstraction correctness is defined as: if two source programs \\(e\\) and \\(e'\\) compile to target programs \\(d\\) and \\(d'\\) respectively, then \\(e\\) and \\(e'\\) are contextually equivalent if and only if \\(d\\) and \\(d'\\) are contextually equivalent.
 
 Contextual equivalence between programs inherently defines a type interface between the programs and an abstraction guarantee that the programs provide the same results under that interface.
-This interface is explictly granted through the logical equivalence which we have proven corresponds to contextual equivalence.
+This interface is explicitly granted through the logical equivalence which we have proven corresponds to contextual equivalence.
 A compiler that is fully abstract preserves these abstractions through compilation, meaning that the same interface that exists between \\(e\\) and \\(e'\\) still exists between \\(d\\) and \\(d'\\) without imposing additional restrictions as to how \\(d\\) and \\(d'\\) should be used to preserve this interface.
 
 A reasonable example of breaking abstraction would be when a source program requires a specific memory location \\(m\\) to be "nonzero" and only allows you to reference this memory location through functions that preserve \\(m\neq 0\\).
@@ -160,7 +148,7 @@ To get full abstraction correctness, it is enough to prove that for any pair of 
 $$d \equiv \mathbf{over}(e) \equiv \mathbf{over}(e') \equiv d'$$
 
 It remains to show that \\(\mathbf{over}(s) \equiv t\\) for any source and its compiled output.
-Notably, operational correctness is the special case of this theorem when \\(s\\) is a whole program and falls out as a corrollary.
+Notably, operational correctness is the special case of this theorem when \\(s\\) is a whole program and falls out as a corollary.
 In that case, \\(\mathbf{over}\\) is the identity function so we have \\(s \equiv \mathbf{over}(s) \equiv t\\), and contextual equivalence of whole programs implies Kleene equivalence of those same programs under the empty context, so \\(s\\) is Kleene equivalent to \\(t\\).
 
 To prove this big theorem of \\(\mathbf{over}(s) \equiv t\\), we carefully induct through each possible case of compilation pairs \\(s\\) and \\(t\\).
@@ -173,15 +161,15 @@ There can be multiple ways of defining \\(\mathbf{over}\\) and \\(\mathbf{back}\
 The necessary restrictions we have are that they are inverses of each other, they are contextually equivalent to the identity function at the base type, and the big theorem of \\(\mathbf{over}(s) \equiv t\\) holds true.
 
 The novel contribution of the type-merging correctness approach is that we can then define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as functions within the joint language itself, and use contextual-equivalence within the joint language to show that \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are mutual inverses.
-Other related approaches embed \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as syntactic constructs of the joint language, but adds complications in the safety proof of the joint language.
+Other related approaches embed \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as syntactic constructs of the joint language, but add complications in the safety proof of the joint language.
 
 We opt for the simplest definitions we can find, or the simplest type coersions \\(\mathbf{over} : \tau \to \overline{\tau}\\) and \\(\mathbf{back} : \overline{\tau}\to\tau\\) defined inductively on the type \\(\tau\\) where the compilation strategy converts source language type \\(\tau\\) to the target language type \\(\overline{\tau}\\), and we prove that these properties hold for the chosen functions.
 
-The coersions are pretty easy to define in the inductive cases where the compilation stategy does not do much other than inductively carry the out the translation.
+The conversions are pretty easy to define in the inductive cases where the compilation strategy does not do much other than inductively carry out the translation.
 For instance, consider the case of compiling pairs by just compiling each side separately without change, so \\(\tau_1 \times \tau_2\\) compiles to \\(\overline {\tau_1} \times \overline{\tau_2}\\).
-The coersions at these types are defined similarly to an eta-expansion, in other words, they just carry the induction hypothesis along smoothly without doing anything complicated.
+The conversions at these types are defined similarly to an eta-expansion, in other words, they just carry the induction hypothesis along smoothly without doing anything complicated.
 
-Type-merging correcteness works really well when the source and target languages have similar semantics, and in practice, especially for higher-order compilation, it is often the case that the target language is a simplified subset of the source language, meaning we can just utilize the source language itself as the joint language.
+Type-merging correctness works really well when the source and target languages have similar semantics, and in practice, especially for higher-order compilation, it is often the case that the target language is a simplified subset of the source language, meaning we can just utilize the source language itself as the joint language.
 This way, we separate the proof of the type-safety of the joint language from the overall compilation correctness proof, and in fact, we find we can reuse the same joint language for multiple layered phases of compilation, each with its definition of \\(\mathbf{over}\\) and \\(\mathbf{back}\\).
 
 A related work that showcases this is Crary's work on Fully Abstract Module Compilation.
@@ -208,7 +196,7 @@ By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating th
 
 # Proof of Concept
 
-To demonstrate that our compilation correctness works, we proved the correctness of two separate compilation phases and then joined these two proofs together.
+To demonstrate the efficacy of type-merging correctness, we proved the correctness of two separate compilation phases and then joined these two proofs together.
 
 ## Continuation Passing Style Phase
 
@@ -236,7 +224,7 @@ Function application through compilation becomes a parametric packing operation 
 
 ## Joining it All Together
 
-Our final theorem for full abstraction correctness states that if we have \\(e_1 \rightsquigarrow_{CPS} (k, d_1) \rightsquigarrow_{CC} (k, t_1)\\) and similarly \\(e_2 \rightsquigarrow_{CPS} (k, d_2) \rightsquigarrow_{CC} (k, t_2)\\), and we know that
+Our final theorem for full abstraction correctness states that if we have \\(e_1 \rightsquigarrow_{CPS} (k, d_1) \rightsquigarrow_{CC} (k, t_1)\\) and similarly \\(e_2 \rightsquigarrow_{CPS} (k, d_2) \rightsquigarrow_{CC} (k, t_2)\\), then we know that
 $$\Gamma \vdash e_1 \equiv e_2 : \tau\ \ \text{implies}\ \ \overline{\Gamma}, k : \overline{\tau}\to0\vdash t_1\equiv t_2 : 0.$$
 This essentially says that the equivalent \\(e_1\\) and \\(e_2\\) programs compile into equivalent programs \\(t_1\\) and \\(t_2\\), even with both phases of compilation put together.
 We successfully demonstrate that this correctness approach works for these two phases of compilation by rigorously proving this theorem.
