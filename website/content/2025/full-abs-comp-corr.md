@@ -106,13 +106,28 @@ Thankfully, we can define this helpful tool known as a logical relation for thes
 A *logical relation* is defined inductively on the type structure of the programs it is comparing, so we can leverage type information about the program to prove *logical equivalence*.
 We define a logical relation in such a way that gives us the tools to analyze the programs we want to work with but also ensures that logical equivalence and contextual equivalence relate the same things.
 
+## Notation
+
+For consistency, we will refer to source expressions as \\(s\\) and target programs as \\(t\\).
+If we write \\(s1\\) and \\(t1\\) for consistent numbers, we are indicating that the source expression \\(s1\\) gets compiled into the target program output \\(t1\\).
+
+For types, we will use \\(\tau\\) to refer to source types and \\(\overline{\tau}\\) to refer to their compiled target type.
+In the base type, \\(\textbf{bool}\\), we have that \\(\overline{\textbf{bool}} = \textbf{bool}\\), so we omit the overscore.
+
+Source programs, target programs, and contextual equivalence are all represesented in the common domain the joint language created through the type-merging approach.
+When we do not need to distingush between source and target languages, we use \\(e\\) and \\(\varphi\\) to describe an arbitrary program and type in the joint language.
+
+Contextual equivalence should be fully expressed with a typing context and resulting type as \\(\Gamma \vdash e_1 \equiv e_2 : \varphi\\).
+For simplicity in presentation, we will often erase these and express contextual equivalence as \\(e_1 \equiv e_2\\), but rest assured that the typing context is explictly handled in the proofs.
+
+
 ## Full Abstraction Correctness
 
-Formally, full abstraction correctness is defined as: if two source programs \\(e\\) and \\(e'\\) compile to target programs \\(d\\) and \\(d'\\) respectively, then \\(e\\) and \\(e'\\) are contextually equivalent if and only if \\(d\\) and \\(d'\\) are contextually equivalent.
+Formally, full abstraction correctness is defined as: if two source programs \\(s1\\) and \\(s2\\) compile to target programs \\(t1\\) and \\(t2\\) respectively, then \\(s1 \equiv s2\\) if and only if \\(t1 \equiv t2\\).
 
 Contextual equivalence between programs inherently defines a type interface between the programs and an abstraction guarantee that the programs provide the same results under that interface.
 This interface is explicitly granted through the logical equivalence which we have proven corresponds to contextual equivalence.
-A compiler that is fully abstract preserves these abstractions through compilation, meaning that the same interface that exists between \\(e\\) and \\(e'\\) still exists between \\(d\\) and \\(d'\\) without imposing additional restrictions as to how \\(d\\) and \\(d'\\) should be used to preserve this interface.
+A compiler that is fully abstract preserves these abstractions through compilation, meaning that the same interface that exists between \\(s1\\) and \\(s2\\) still exists between \\(t1\\) and \\(t2\\) without imposing additional restrictions as to how \\(t1\\) and \\(t2\\) should be used to preserve this interface.
 
 A reasonable example of breaking abstraction would be when a source program requires a specific memory location \\(m\\) to be "nonzero" and only allows you to reference this memory location through functions that preserve \\(m\neq 0\\).
 Naively compiling this could accidentally expose \\(m\\) to other parts of the program. Abstraction is preserved only if those other parts of the program abide by the rule of \\(m\neq 0\\).
@@ -130,22 +145,22 @@ In the next section, we present a method of proving operational correctness that
 
 ## Proving Correctness
 
-Let's take two arbitrary source programs \\(e\\) and \\(e'\\) which compile to target programs \\(d\\) and \\(d'\\) respectively.
-To prove the forward direction of full abstraction correctness, we assume \\(e \equiv e'\\) meaning \\(e\\) and \\(e'\\) are contextually equivalent, and we aim to show that \\(d\equiv d'\\).
+Let's take two arbitrary source programs \\(s1\\) and \\(s2\\) which compile to target programs \\(t1\\) and \\(t2\\) respectively.
+To prove the forward direction of full abstraction correctness, we assume \\(s1 \equiv s2\\), and we aim to show that \\(t1\equiv t2\\).
 
 If the source and target languages were the same and the types of programs didn't change during compilation (not an interesting compiler), then just knowing that the source and target programs are contextually equivalent is enough to prove full abstraction correctness by symmetry and transitivity of contextual-equivalence.
 
-$$d \equiv e \equiv e' \equiv d'$$
+$$t1 \equiv s1 \equiv s2 \equiv t2$$
 
 However, in most cases, the source and target programs are not directly contextually equivalent but are contextually equivalent over a chosen interface.
 This interface is defined through functions \\(\mathbf{over}\\) and \\(\mathbf{back}\\) that relate the logic of the source and target languages.
 The function \\(\mathbf{over}\\) wraps an interface around a source program so it can be understood in the target language, and the \\(\mathbf{back}\\) wraps an interface around the target program so it can be understood in the source language.
 We define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) inductively based on the type of the input, where we set \\(\mathbf{over}\\) and \\(\mathbf{back}\\) at the base answer type of booleans to be the identity function.
-We prove that these two interfaces are inverses of each other, meaning for any program \\(p\\), we have that \\(p\equiv \mathbf{over}(\mathbf{back}(p))\equiv \mathbf{back}(\mathbf{over}(p)) \\).
+We prove that these two interfaces are inverses of each other within the joint language, meaning for any joint language expressions \\(e1\\) and \\(e2\\) of the appropriate types, \\(e1\equiv \mathbf{back}(\mathbf{over}(e1))\\) and \\(e2 \equiv \mathbf{over}(\mathbf{back}(e2)) \\).
 
 To get full abstraction correctness, it is enough to prove that for any pair of source and its compiled output \\(s \\) and \\(t\\), we have \\(s \equiv \mathbf{back}(t)\\) or equivalently that \\(\mathbf{over}(s) \equiv t\\).
 
-$$d \equiv \mathbf{over}(e) \equiv \mathbf{over}(e') \equiv d'$$
+$$t1 \equiv \mathbf{over}(s1) \equiv \mathbf{over}(s2) \equiv t2$$
 
 It remains to show that \\(\mathbf{over}(s) \equiv t\\) for any source and its compiled output.
 Notably, operational correctness is the special case of this theorem when \\(s\\) is a whole program and falls out as a corollary.
@@ -186,21 +201,24 @@ Assume that d1 and d2 are the fully compiled versions of e1 and e2 respectively.
 
 ```ocaml
 (* source *)
-let f x : bool = e1;;
-f (e2)
+let f x : bool = s1;;
+f (s2)
 
 (* compiled *)
-let g x y : bool = d1;;
-g (d2) (d2)
+let g x y : bool = t1;;
+g (t2) (t2)
 ```
 
-The compiler is doing a lot of interesting business in that it needs to keep track of function arguments and duplicate them.
+Here, we see that the source program f only recieves one argument s2, but the resulting compiled function g recieves the same argument t2 two times.
+There are not many practical merits to this transformation, but it illustrates the point that the compiler is syntax aware: it doubles the input arguments in every function definition and duplicates the function argument in every function call.
+This transformation affects the function type only, and importantly, the bool type which is our answer type does not change.
+
 Meanwhile, one of the restrictions of the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions is that their definitions at the base type is contextually equivalent to the identity function, and the whole program we are compiling happens to be of the base type, bool.
 Even though the compiler is doing a lot of stuff, the \\(\mathbf{over}\\) function we use in our proof does not do anything at all, and just returns the original input as is.
 
 The distinction lies in that the compiler can observe how the expression is defined and can chop up the syntax however it likes to produce a compiled result, but the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions only know the overall type of the expression.
 In this sense, the compiler is a conversion of the *intensional* properties of the program where the way the program is implemented does matter, whereas the \\(\mathbf{over}\\) function is a relation of the *extensional* behavior of the program.
-The \\(\mathbf{over}\\) function is an interface wrapping up the program in a way that abstracts away the particular implementation, leaving you only able to condition the final result value you get from executing the program.
+The \\(\mathbf{over}\\) function is an interface wrapping up the program in a way that abstracts away the particular implementation, leaving us only able to condition the final result value we get from executing the program.
 By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating that the *intensional* changes the compiler makes adhere to the *extensional* properties of the original program, which is a really strong statement of correctness.
 
 # Proof of Concept
@@ -211,8 +229,8 @@ This takes us from an ML-like source language with control-flow effects and anon
 ## Continuation Passing Style Phase
 
 The continuation passing style (CPS) translation [[3]](#references) is commonly used to cleanly express the control-flow of programs.
-We convert a term \\(e\\) into a pair \\((k,d)\\) where \\(d\\) is a computation, and \\(k\\) is a continuation for which the computation returns a value once it is finished running.
-Normally, there is a one-to-one correspondence: \\(d\\) only produces one value which gets sent to the continuation \\(k\\) at one location, but this translation phase becomes most interesting when we add control-flow effects into our language which breaks this one-to-one correspondence.
+We convert a term \\(s\\) into a pair \\((k,t)\\) where \\(t\\) is a computation, and \\(k\\) is a continuation for which the computation returns a value once it is finished running.
+Normally, there is a one-to-one correspondence: \\(t\\) only produces one value which gets sent to the continuation \\(k\\) at one location, but this translation phase becomes most interesting when we add control-flow effects into our language which breaks this one-to-one correspondence.
 The CPS translation can tame all these control-flow effects, leaving us in a simpler language without explicit control-flow operations.
 
 Our source language contains the explicit control-flow operations of \\(\mathbf{letcc}\\) and \\(\mathbf{throw}\\).
@@ -234,9 +252,9 @@ Function application through compilation becomes a parametric packing operation 
 
 ## Joining it All Together
 
-Our final theorem for full abstraction correctness states that if we have \\(e_1 \rightsquigarrow_{CPS} (k, d_1) \rightsquigarrow_{CC} (k, t_1)\\) and similarly \\(e_2 \rightsquigarrow_{CPS} (k, d_2) \rightsquigarrow_{CC} (k, t_2)\\), then we know that
-$$\Gamma \vdash e_1 \equiv e_2 : \tau\ \ \text{if and only if}\ \ \overline{\Gamma}, k : \overline{\tau}\to0\vdash t_1\equiv t_2 : 0.$$
-This essentially says that the equivalent \\(e_1\\) and \\(e_2\\) programs compile into equivalent programs \\(t_1\\) and \\(t_2\\), even with both phases of compilation put together.
+Our final theorem for full abstraction correctness states that if we have start with source programs \\(s_1\\) and \\(s_2\\), and put them both through both phases of compilation to get \\(t_1\\) and \\(t_2\\) respectively with continuation variable \\(k\\), then we know that
+$$\Gamma \vdash s_1 \equiv s_2 : \tau\ \ \text{if and only if}\ \ \overline{\Gamma}, k : \overline{\tau}\to0\vdash t_1\equiv t_2 : 0.$$
+This essentially says that the equivalent \\(s_1\\) and \\(s_2\\) programs compile into equivalent programs \\(t_1\\) and \\(t_2\\), even with both phases of compilation put together.
 We are extra pedantic with the notation for this final lemma.
 Note that the CPS phase adds a new variable \\(k\\) representing the continuation to the context of open variables \\(\Gamma\\).
 The type \\(0\\) represents the empty type as the compiled term calls the continuation instead of returning a value.
