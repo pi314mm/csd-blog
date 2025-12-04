@@ -67,7 +67,7 @@ A stronger translation would not only include the direct translation from Englis
 We can build more robust compilers by incorporating the important contextual information from the source language into the compiled output.
 This ensures that any optimizations acting on the compiled output do not corrupt the integrity of the program, as the contextual information is innately preserved.
 
-Given the scale of modern programming practices, we often require full abstraction correctness in addition to operational correctness to ensure our compiler is compositionally correct.
+Given the scale of modern programming practices where we manipulate and combine programs post-compilation, we often require full abstraction correctness in addition to operational correctness.
 We need operational correctness to make sure the direct translation makes sense, but we also need full abstraction correctness to ensure this operational correctness is not conditional on hidden invariants in the contextual information.
 Without this stronger guarantee, bugs could be introduced post-compilation when importing a pre-compiled library in an incompatible context, or when linking together programs from various sources and compilers that may have conflicting contextual assumptions.
 
@@ -161,7 +161,7 @@ There can be multiple ways of defining \\(\mathbf{over}\\) and \\(\mathbf{back}\
 The necessary restrictions we have are that they are inverses of each other, they are contextually equivalent to the identity function at the base type, and the big theorem of \\(\mathbf{over}(s) \equiv t\\) holds true.
 
 The novel contribution of the type-merging correctness approach is that we can then define \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as functions within the joint language itself, and use contextual-equivalence within the joint language to show that \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are mutual inverses.
-Other related approaches embed \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as syntactic constructs of the joint language, but add complications in the safety proof of the joint language.
+Other related approaches [[1]](#references) embed \\(\mathbf{over}\\) and \\(\mathbf{back}\\) as syntactic constructs of the joint language, but add complications in the safety proof of the joint language.
 
 We opt for the simplest definitions we can find, or the simplest type coersions \\(\mathbf{over} : \tau \to \overline{\tau}\\) and \\(\mathbf{back} : \overline{\tau}\to\tau\\) defined inductively on the type \\(\tau\\) where the compilation strategy converts source language type \\(\tau\\) to the target language type \\(\overline{\tau}\\), and we prove that these properties hold for the chosen functions.
 
@@ -172,7 +172,7 @@ The conversions at these types are defined similarly to an eta-expansion, in oth
 Type-merging correctness works really well when the source and target languages have similar semantics, and in practice, especially for higher-order compilation, it is often the case that the target language is a simplified subset of the source language, meaning we can just utilize the source language itself as the joint language.
 This way, we separate the proof of the type-safety of the joint language from the overall compilation correctness proof, and in fact, we find we can reuse the same joint language for multiple layered phases of compilation, each with its definition of \\(\mathbf{over}\\) and \\(\mathbf{back}\\).
 
-A related work that showcases this is Crary's work on Fully Abstract Module Compilation.
+A related work that showcases this is Crary's work on Fully Abstract Module Compilation. [[2]](#references)
 This employs a phase-separation algorithm for splitting modules into static and dynamic portions without reference to the module language.
 This means we can go from a rich expressive language with modules as the source language, compile away the modules through this phase-separation technique, and arrive at a simpler target language without modules.
 In this case, the joint language is rather close to the source language itself.
@@ -182,14 +182,23 @@ In this case, the joint language is rather close to the source language itself.
 You might be wondering, is \\(\mathbf{over}\\) the same as the compilation itself?
 If it were, then this result is rather obvious because we would be comparing the compilation to the compilation.
 To illustrate the difference, let's look at an example program and a silly compilation phase that computes every function argument twice.
-Assume that \\(d1\\) and \\(d2\\) are the fully compiled versions of \\(e1\\) and \\(e2\\) respectively.
+Assume that d1 and d2 are the fully compiled versions of e1 and e2 respectively.
 
-$$(\lambda (x : A) : \mathbf{bool} .\ e1)\ e2\ \rightsquigarrow\ (\lambda^2 (x : A) (x : A) : \mathbf{bool}\ .\ \overline{e1})\ \overline{e2}\ \overline{e2}$$
+```ocaml
+(* source *)
+let f x : bool = e1;;
+f (e2)
 
-$$\mathbf{over} = \mathbf{back} = (\lambda (x : \mathbf{bool}) : \mathbf{bool} .\ x)$$
+(* compiled *)
+let g x y : bool = d1;;
+g (d2) (d2)
+```
 
-Here we see that the program is rather complex in its implementation and compilation, but it overall has the base type \\(\mathbf{bool}\\).
-The compiler can observe how the program is defined and can chop up the syntax however it likes to produce a compiled result, but the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions only know that the program has the type \\(\mathbf{bool}\\), and that is a base type that remains consistent before and after compilation, so the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions are the identity function.
+The compiler is doing a lot of interesting business in that it needs to keep track of function arguments and duplicate them.
+Meanwhile, one of the restrictions of the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions is that their definitions at the base type is contextually equivalent to the identity function, and the whole program we are compiling happens to be of the base type, bool.
+Even though the compiler is doing a lot of stuff, the \\(\mathbf{over}\\) function we use in our proof does not do anything at all, and just returns the original input as is.
+
+The distinction lies in that the compiler can observe how the expression is defined and can chop up the syntax however it likes to produce a compiled result, but the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) functions only know the overall type of the expression.
 In this sense, the compiler is a conversion of the *intensional* properties of the program where the way the program is implemented does matter, whereas the \\(\mathbf{over}\\) function is a relation of the *extensional* behavior of the program.
 The \\(\mathbf{over}\\) function is an interface wrapping up the program in a way that abstracts away the particular implementation, leaving you only able to condition the final result value you get from executing the program.
 By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating that the *intensional* changes the compiler makes adhere to the *extensional* properties of the original program, which is a really strong statement of correctness.
@@ -197,37 +206,64 @@ By comparing the compiler to the \\(\mathbf{over}\\) function, we are stating th
 # Proof of Concept
 
 To demonstrate the efficacy of type-merging correctness, we proved the correctness of two separate compilation phases and then joined these two proofs together.
+This takes us from an ML-like source language with control-flow effects and anonymous functions to a target language that has those two features compiled away.
 
 ## Continuation Passing Style Phase
 
-The continuation passing style (CPS) translation is commonly used to cleanly express the control flow of programs.
+The continuation passing style (CPS) translation [[3]](#references) is commonly used to cleanly express the control-flow of programs.
 We convert a term \\(e\\) into a pair \\((k,d)\\) where \\(d\\) is a computation, and \\(k\\) is a continuation for which the computation returns a value once it is finished running.
-Normally, these are a one-to-one correspondence: \\(d\\) only produces one value which gets sent to the continuation \\(k\\) at one location, but this translation phase becomes most interesting when we add control flow effects into our language which breaks this one-to-one correspondence.
-The CPS translation can tame all these control flow effects, leaving us in a simpler language without explicit control flow operations.
+Normally, there is a one-to-one correspondence: \\(d\\) only produces one value which gets sent to the continuation \\(k\\) at one location, but this translation phase becomes most interesting when we add control-flow effects into our language which breaks this one-to-one correspondence.
+The CPS translation can tame all these control-flow effects, leaving us in a simpler language without explicit control-flow operations.
 
-Our source language contains the explicit control flow operations of \\(\mathbf{letcc}\\) and \\(\mathbf{throw}\\).
-The constructor \\(\mathbf{letcc}\\) allows us to record the current state of the computer and save it as a continuation while \\(\mathbf{throw}\\) lets us jump to some previous state of the computer by calling the respective continuation.
+Our source language contains the explicit control-flow operations of \\(\mathbf{letcc}\\) and \\(\mathbf{throw}\\).
+The construct \\(\mathbf{letcc}\\) allows us to record the current state of the computer and save it as a continuation while \\(\mathbf{throw}\\) lets us jump to some previous state of the computer by calling the respective continuation.
 You can pretend it is similar to an assembly jump operation, so you can imagine how it could be used to express conditional branching and short-circuiting of computations.
 
-Interestingly, \\(\mathbf{over}\\) and \\(\mathbf{back}\\) for the CPS translation must use these control flow mechanisms within its definition.
-Thankfully, we can prove that these particular control flow effects within the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are benign so we can maintain the properties we want with some extra effort.
+Interestingly, \\(\mathbf{over}\\) and \\(\mathbf{back}\\) for the CPS translation must use these control-flow mechanisms within its definition.
+Thankfully, we can prove that these particular control-flow effects within the \\(\mathbf{over}\\) and \\(\mathbf{back}\\) are benign so we can maintain the properties we want with some extra effort.
 
 ## Closure Conversion Phase
 
 A closure is an inline function that can utilize the initialized variables in the context within its definition.
-Closure conversion (CC) translation takes these closures and turns them into global function definitions that can be moved into the top level instead of inlined.
+Closure conversion (CC) translation [[4]](#references) takes these closures and turns them into global function definitions that can be moved into the top level instead of inlined.
 It achieves this by packaging the variables in the context that the closure depends on into a large tuple and passing them as input into the global function to maintain the dependency.
 
-Central to the proof of this phase is a parametricity relation between the original closure function and the resulting global function.
+Central to the proof of this phase is a *parametricity* relation between the original closure function and the resulting global function.
 Parametricity allows us to show that two programs are contextually equivalent even if they are of different types, as long as we can state an interface where the types are related.
-Function application through compilation becomes a parametric packing operation into an existential type before calling the function, granting us the interface we need in the proof of full abstraction correctness.
+Function application through compilation becomes a parametric packing operation before calling the function, granting us the interface we need in the proof of full abstraction correctness.
 
 ## Joining it All Together
 
 Our final theorem for full abstraction correctness states that if we have \\(e_1 \rightsquigarrow_{CPS} (k, d_1) \rightsquigarrow_{CC} (k, t_1)\\) and similarly \\(e_2 \rightsquigarrow_{CPS} (k, d_2) \rightsquigarrow_{CC} (k, t_2)\\), then we know that
-$$\Gamma \vdash e_1 \equiv e_2 : \tau\ \ \text{implies}\ \ \overline{\Gamma}, k : \overline{\tau}\to0\vdash t_1\equiv t_2 : 0.$$
+$$\Gamma \vdash e_1 \equiv e_2 : \tau\ \ \text{if and only if}\ \ \overline{\Gamma}, k : \overline{\tau}\to0\vdash t_1\equiv t_2 : 0.$$
 This essentially says that the equivalent \\(e_1\\) and \\(e_2\\) programs compile into equivalent programs \\(t_1\\) and \\(t_2\\), even with both phases of compilation put together.
-We successfully demonstrate that this correctness approach works for these two phases of compilation by rigorously proving this theorem.
+We are extra pedantic with the notation for this final lemma.
+Note that the CPS phase adds a new variable \\(k\\) representing the continuation to the context of open variables \\(\Gamma\\).
+The type \\(0\\) represents the empty type as the compiled term calls the continuation instead of returning a value.
 
+We successfully demonstrate that this correctness approach works for these two phases of compilation by rigorously proving this theorem.
 With this, we have completed our proof of full abstraction compilation correctness for two compilation passes layered together utilizing a single joint language definition.
 In future work, we hope to add more layers of compilation to our proof and tackle some difficult compilation phases such as memory allocation and garbage collection.
+
+# References
+<style>
+dl {
+  display: grid;
+  overflow: hidden;
+  grid-template-columns: max-content minmax(0,1fr);
+}
+
+dt {
+  grid-column-start: 1;
+}
+
+dd {
+  grid-column-start: 2;
+}
+</style>
+<dl>
+  <dt>[1]</dt><dd>Ahmed, Amal, and Matthias Blume. "An equivalence-preserving CPS translation via multi-language semantics." <i>Proceedings of the 16th ACM SIGPLAN international conference on Functional programming</i>. 2011.</dd>
+  <dt>[2]</dt><dd>Crary, Karl. "Fully abstract module compilation." <i>Proceedings of the ACM on Programming Languages</i> 3.POPL (2019): 1-29.</dd>
+  <dt>[3]</dt><dd>Harper, Robert, and Mark Lillibridge. "Explicit polymorphism and CPS conversion." <i>Proceedings of the 20th ACM SIGPLAN-SIGACT symposium on principles of programming languages</i>. 1993.</dd>
+  <dt>[4]</dt><dd>Minamide, Yasuhiko, Greg Morrisett, and Robert Harper. "Typed closure conversion." <i>Proceedings of the 23rd ACM SIGPLAN-SIGACT symposium on principles of programming languages</i>. 1996.</dd>
+</dl>
