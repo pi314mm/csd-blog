@@ -197,7 +197,7 @@ In this case, the joint language is rather close to the source language itself.
 You might be wondering, is \\(\mathbf{over}\\) the same as the compilation itself?
 If it were, then this result is rather obvious because we would be comparing the compilation to the compilation.
 To illustrate the difference, let's look at an example program and a silly compilation phase that computes every function argument twice.
-Assume that d1 and d2 are the fully compiled versions of e1 and e2 respectively.
+Assume that t1 and t2 are the fully compiled versions of s1 and s2 respectively.
 
 ```ocaml
 (* source *)
