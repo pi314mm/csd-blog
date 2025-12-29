@@ -1,6 +1,6 @@
 +++
 title = "Correctness of Compilation"
-date = 2025-12-04
+date = 2025-12-29
 
 [taxonomies]
 areas = ["Programming Languages"]
@@ -139,9 +139,9 @@ If we want to change a single line of code in the source language but have alrea
 This notion of correctness also enables optimizations at any stage of compilation: we can perform a partial hot-swap of code at any compilation stage and still maintain the overall correctness proof.
 The structure of this definition also allows for stacking arbitrarily many compilation phases together; we just need to show that contextual equivalence is preserved at each stage.
 
-Looking carefully at the definition of full abstraction correctness, we find that a way to trivialize it is to compile every source program into one fixed target program: this would preserve the abstraction guarantees but it wouldn't be a useful compiler.
-We still need to prove operational correctness in addition to full abstraction correctness to show the compiler makes sense.
-In the next section, we present a method of proving operational correctness that additionally grants us full abstraction correctness directly.
+We need both full abstraction correctness and operational correctness to truly be able to say the compilation strategy makes sense, and neither form of correctness directly implies the other.
+However, it is possible to prove a single stronger theorem and use it to derive corollaries of both full abstraction correctness and operational correctness directly.
+In the next section, we will discover that big theorem through the process of trying to prove full abstraction correctness.
 
 ## Proving Correctness
 
@@ -254,7 +254,7 @@ Function application through compilation becomes a parametric packing operation 
 
 Our final theorem for full abstraction correctness states that if we have start with source programs \\(s_1\\) and \\(s_2\\), and put them both through both phases of compilation to get \\(t_1\\) and \\(t_2\\) respectively with continuation variable \\(k\\), then we know that
 $$\Gamma \vdash s_1 \equiv s_2 : \tau\ \ \text{if and only if}\ \ \overline{\Gamma}, k : \overline{\tau}\to0\vdash t_1\equiv t_2 : 0.$$
-This essentially says that the equivalent \\(s_1\\) and \\(s_2\\) programs compile into equivalent programs \\(t_1\\) and \\(t_2\\), even with both phases of compilation put together.
+This essentially says that the equivalent programs \\(s_1\\) and \\(s_2\\) compile into equivalent programs \\(t_1\\) and \\(t_2\\), even with both phases of compilation put together.
 We are extra pedantic with the notation for this final lemma.
 Note that the CPS phase adds a new variable \\(k\\) representing the continuation to the context of open variables \\(\Gamma\\).
 The type \\(0\\) represents the empty type as the compiled term calls the continuation instead of returning a value.
